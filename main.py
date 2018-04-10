@@ -131,7 +131,7 @@ tests.test_train_nn(train_nn)
 
 
 def run():
-    epoches = 10
+    epochs = 10
     batch_size = 80
     num_classes = 2
     image_shape = (160, 576)
@@ -165,7 +165,7 @@ def run():
         output = layers(layer3_out, layer4_out, layer7_out, num_classes)
         logits, train_op, cross_entropy_loss = optimize(output, correct_label, learning_rate, num_classes)
         # Train NN using the train_nn function
-        train_nn(sess, epoches, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
                  correct_label, keep_prob, learning_rate)
 
         # Save inference data using helper.save_inference_samples
