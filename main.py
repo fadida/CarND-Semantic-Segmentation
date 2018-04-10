@@ -67,9 +67,6 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1,
                                 padding='same', kernel_regularizer=kernel_regularizer)
 
-    print('7 shape is ', vgg_layer7_out.shape)
-    print('1x1 shape is ', conv_1x1.shape)
-
     layer4_upscale = tf.layers.conv2d_transpose(vgg_layer4_out, num_classes, 4, 2, padding='same',
                                                 kernel_regularizer=kernel_regularizer)
     skip_1 = tf.add(conv_1x1, layer4_upscale)
@@ -93,11 +90,9 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
-    # TODO: Implement function
-    logits = tf.reshape(nn_last_layer, (-1, num_classes))
-    labels = tf.one_hot(correct_label, num_classes)
 
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, labels))
+    logits = tf.reshape(nn_last_layer, (-1, num_classes))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_operation = optimizer.minimize(cross_entropy_loss)
@@ -123,6 +118,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     print('Start training network.')
 
+    sess.run(tf.global_variables_initializer())
     for epoch in epochs:
         print('epoch no.{}'.format(epoch + 1))
         print('-'*10)
@@ -142,6 +138,10 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
 
+    # tf placeholders
+    learning_rate = tf.placeholder(tf.float32)
+    correct_label = tf.placeholder(tf.float32, [None, None, None, num_classes])
+
     tests.test_for_kitti_dataset(data_dir)
 
     # Download pretrained vgg model
@@ -159,10 +159,6 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
-
-        # tf placeholders
-        learning_rate = tf.placeholder(tf.float32)
-        correct_label = tf.placeholder(tf.int32)
 
         # Build NN using load_vgg, layers, and optimize function
         input_image, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_path)
