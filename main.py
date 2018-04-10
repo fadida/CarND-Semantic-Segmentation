@@ -67,14 +67,16 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1,
                                 padding='same', kernel_regularizer=kernel_regularizer)
 
-    # upscale the output of the 1x1 convolution in order to merge it with pool 4
-    encoder_upscale = tf.layers.conv2d_transpose(conv_1x1, num_classes, 4, 2, padding='same',
-                                                 kernel_regularizer=kernel_regularizer)
-    skip_1 = tf.add(encoder_upscale, vgg_layer4_out, kernel_regularizer=kernel_regularizer)
+    print('7 shape is ', vgg_layer7_out.shape)
+    print('1x1 shape is ', conv_1x1.shape)
 
-    skip_1_upscale = tf.layers.conv2d_transpose(skip_1, num_classes, 4, 2, padding='same',
+    layer4_upscale = tf.layers.conv2d_transpose(vgg_layer4_out, num_classes, 4, 2, padding='same',
                                                 kernel_regularizer=kernel_regularizer)
-    skip_2 = tf.add(skip_1_upscale, vgg_layer3_out)
+    skip_1 = tf.add(conv_1x1, layer4_upscale)
+
+    layer3_upscale = tf.layers.conv2d_transpose(vgg_layer3_out, num_classes, 4, 2, padding='same',
+                                                kernel_regularizer=kernel_regularizer)
+    skip_2 = tf.add(skip_1, layer3_upscale)
 
     output = tf.layers.conv2d_transpose(skip_2, num_classes, 16, 8, padding='same',
                                         kernel_regularizer=kernel_regularizer)
