@@ -2,6 +2,7 @@ import os.path
 import tensorflow as tf
 import helper
 import warnings
+import tqdm
 from distutils.version import LooseVersion
 import project_tests as tests
 
@@ -67,13 +68,14 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     conv_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1,
                                 padding='same', kernel_regularizer=kernel_regularizer)
 
-    layer4_upscale = tf.layers.conv2d_transpose(vgg_layer4_out, num_classes, 4, 2, padding='same',
-                                                kernel_regularizer=kernel_regularizer)
-    skip_1 = tf.add(conv_1x1, layer4_upscale)
+    conv_1x1_upscale = tf.layers.conv2d_transpose(conv_1x1, vgg_layer4_out.shape[-1], 4, 2, padding='same',
+                                                  kernel_regularizer=kernel_regularizer)
 
-    layer3_upscale = tf.layers.conv2d_transpose(vgg_layer3_out, num_classes, 4, 2, padding='same',
+    skip_1 = tf.add(conv_1x1_upscale, vgg_layer4_out)
+
+    skip_1_upscale = tf.layers.conv2d_transpose(skip_1, vgg_layer3_out.shape[-1], 4, 2, padding='same',
                                                 kernel_regularizer=kernel_regularizer)
-    skip_2 = tf.add(skip_1, layer3_upscale)
+    skip_2 = tf.add(skip_1_upscale, vgg_layer3_out)
 
     output = tf.layers.conv2d_transpose(skip_2, num_classes, 16, 8, padding='same',
                                         kernel_regularizer=kernel_regularizer)
@@ -120,9 +122,11 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
 
     sess.run(tf.global_variables_initializer())
     for epoch in range(epochs):
-        print('epoch no.{}'.format(epoch + 1))
+        print('epoch no.{}:'.format(epoch + 1))
         print('-'*10)
+
         for image, label in get_batches_fn(batch_size):
+            #print('image shape = {}', image.shape)
             sess.run(train_op, feed_dict={input_image: image, correct_label: label, keep_prob: 0.3,
                                           learning_rate: 1e-3})
 
@@ -132,7 +136,7 @@ tests.test_train_nn(train_nn)
 
 def run():
     epochs = 10
-    batch_size = 80
+    batch_size = 20
     num_classes = 2
     image_shape = (160, 576)
     data_dir = './data'
